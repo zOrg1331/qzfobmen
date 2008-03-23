@@ -60,8 +60,9 @@ qfobmen::qfobmen()
 	commentDialog = new CommentDialog(this);
 	udpSocketS = new QUdpSocket(this);
 	udpSocketR = new QUdpSocket(this);
-	udpSocketFS = new QUdpSocket(this);
-	udpSocketFR = new QUdpSocket(this);
+	tcpSocketFS = new QTcpSocket(this);
+	//udpSocketFS = new QUdpSocket(this);
+	//udpSocketFR = new QUdpSocket(this);
 	udpSocketCS = new QUdpSocket(this);
 	udpSocketCR = new QUdpSocket(this);
 
@@ -79,7 +80,8 @@ qfobmen::qfobmen()
 	commentDialog->hide();
 	// принимаем широковещательные пакеты от других программ в сети на порту 45454
 	udpSocketR->bind(45454, QUdpSocket::ShareAddress);
-	udpSocketFR->bind(45455, QUdpSocket::ShareAddress);
+	fileServer.listen(QHostAddress::Any, 45455);
+	//udpSocketFR->bind(45455, QUdpSocket::ShareAddress);
 	udpSocketCR->bind(45456, QUdpSocket::ShareAddress);
 	// задаем наш ник (первоначальный)
 	// вобщем, инициализируем переменные
@@ -87,6 +89,9 @@ qfobmen::qfobmen()
 	appsList->setContextMenuPolicy(Qt::CustomContextMenu);
 	blockSize = 0;
 	blockSizeMessage = 0;
+
+	connect(&fileServer, SIGNAL(fileSize(int)), progressBar, SLOT(setMaximum(int)));
+	connect(&fileServer, SIGNAL(currBytes(int)), progressBar, SLOT(setValue(int)));
 
 	// инициализируем действиями контекстное меню
 	sendAct = new QAction(trUtf8("Послать файл..."), this);
@@ -101,9 +106,9 @@ qfobmen::qfobmen()
 	connect(commentDialog, SIGNAL(newComment()), this, SLOT(connectToSend()));
 	// пришел пакет на UDP socket, запускаем его обработку
 	connect(udpSocketR, SIGNAL(readyRead()), this, SLOT(processPendingDatagrams()));
-	connect(udpSocketFR, SIGNAL(readyRead()), this, SLOT(processPendingDatagramsF()));
+	//connect(udpSocketFR, SIGNAL(readyRead()), this, SLOT(processPendingDatagramsF()));
 	connect(udpSocketCR, SIGNAL(readyRead()), this, SLOT(processPendingDatagramsC()));
-	connect(udpSocketFS, SIGNAL(connected()), this, SLOT(sendFile()));
+	connect(tcpSocketFS, SIGNAL(connected()), this, SLOT(sendFile()));
 	connect(udpSocketCS, SIGNAL(connected()), this, SLOT(sendMessage()));
 	// на каждый тик таймера отправляем новые пакеты
 	connect(timer, SIGNAL(timeout()), this, SLOT(broadcastDatagram()));
@@ -217,70 +222,70 @@ void qfobmen::processPendingDatagrams()
 	}
 }
 
-void qfobmen::processPendingDatagramsF()
-{
-	// пока очередь не опустела, обрабатываем датаграммы
- 	while (udpSocketFR->hasPendingDatagrams()) {
-		// выдаем пользователю звук и сообщение о запросе на сохранение нового файла
-		QMessageBox::StandardButton reply;
-		// или не выдаем звук, если он был отключен
-		if (!soundOffButton->isChecked()) {
-			QSound::play("sounds/newfile.wav");
-		}
-		reply = QMessageBox::question(this, trUtf8("Новый файл прибыл!"),
-									  trUtf8("Пришел запрос на прием файла. Получить?"),
-									  QMessageBox::Yes | QMessageBox::No);
-		if (reply == QMessageBox::Yes) {
-			QByteArray datagram;
-			datagram.resize(udpSocketFR->pendingDatagramSize());
-			QHostAddress sender;
-			quint16 senderPort;
-
-			udpSocketFR->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
-
-			// виртульный поток данных
-			QDataStream in(datagram);
-			in.setVersion(QDataStream::Qt_4_0);
-
-			in >> blockSize;
-
-			// размер прогрессбара будет зависеть от размера, указанного в blockSize
-			progressBar->setMinimum(0);
-			progressBar->setMaximum(blockSize);
-			cancelTransferButton->setEnabled(true);
-
-			QString comment;
-			QString fileName;
-
-			// разделяем пришедшее на комментарий, имя файла и сам файл
-			in >> comment;
-			in >> fileName;
-
-			// обрабатываем пришедшее имя файла
-			QFileInfo fi(fileName);
-			fileName = fi.fileName();
-
-			QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
-			QString saveDirectory = QFileDialog::getExistingDirectory(this,
-					trUtf8("Куда файл сохранять?"), ".", options);
-			QFile file(saveDirectory+"\\"+fileName);
-			if (!file.open(QIODevice::WriteOnly))
-				return;
-			QByteArray tmp;
-			in >> tmp;
-			file.write(tmp);
-			file.close();
-			progressBar->reset();
-			cancelTransferButton->setEnabled(false);
-			QMessageBox::information(this, trUtf8("Новый файл прибыл!"),
-									 trUtf8("Файл %1 успешно закачан.").arg(fileName), QMessageBox::Ok);
-		}
-		else if (reply == QMessageBox::No) {
-			// ежели не хочется принимать файл, то обрубаем соединение
-			udpSocketFR->abort();
-		}
- 	}
-}
+// void qfobmen::processPendingDatagramsF()
+// {
+// 	// пока очередь не опустела, обрабатываем датаграммы
+//  	while (udpSocketFR->hasPendingDatagrams()) {
+// 		// выдаем пользователю звук и сообщение о запросе на сохранение нового файла
+// 		QMessageBox::StandardButton reply;
+// 		// или не выдаем звук, если он был отключен
+// 		if (!soundOffButton->isChecked()) {
+// 			QSound::play("sounds/newfile.wav");
+// 		}
+// 		reply = QMessageBox::question(this, trUtf8("Новый файл прибыл!"),
+// 									  trUtf8("Пришел запрос на прием файла. Получить?"),
+// 									  QMessageBox::Yes | QMessageBox::No);
+// 		if (reply == QMessageBox::Yes) {
+// 			QByteArray datagram;
+// 			datagram.resize(udpSocketFR->pendingDatagramSize());
+// 			QHostAddress sender;
+// 			quint16 senderPort;
+//
+// 			udpSocketFR->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
+//
+// 			// виртульный поток данных
+// 			QDataStream in(datagram);
+// 			in.setVersion(QDataStream::Qt_4_0);
+//
+// 			in >> blockSize;
+//
+// 			// размер прогрессбара будет зависеть от размера, указанного в blockSize
+// 			progressBar->setMinimum(0);
+// 			progressBar->setMaximum(blockSize);
+// 			cancelTransferButton->setEnabled(true);
+//
+// 			QString comment;
+// 			QString fileName;
+//
+// 			// разделяем пришедшее на комментарий, имя файла и сам файл
+// 			in >> comment;
+// 			in >> fileName;
+//
+// 			// обрабатываем пришедшее имя файла
+// 			QFileInfo fi(fileName);
+// 			fileName = fi.fileName();
+//
+// 			QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
+// 			QString saveDirectory = QFileDialog::getExistingDirectory(this,
+// 					trUtf8("Куда файл сохранять?"), ".", options);
+// 			QFile file(saveDirectory+"\\"+fileName);
+// 			if (!file.open(QIODevice::WriteOnly))
+// 				return;
+// 			QByteArray tmp;
+// 			in >> tmp;
+// 			file.write(tmp);
+// 			file.close();
+// 			progressBar->reset();
+// 			cancelTransferButton->setEnabled(false);
+// 			QMessageBox::information(this, trUtf8("Новый файл прибыл!"),
+// 									 trUtf8("Файл %1 успешно закачан.").arg(fileName), QMessageBox::Ok);
+// 		}
+// 		else if (reply == QMessageBox::No) {
+// 			// ежели не хочется принимать файл, то обрубаем соединение
+// 			udpSocketFR->abort();
+// 		}
+//  	}
+// }
 
 void qfobmen::processPendingDatagramsC()
 {
@@ -408,8 +413,8 @@ void qfobmen::connectToSend()
 	// выбираем к кому, и устанавливаем соединение
 	QHostAddress toSendHost;
 	toSendHost.setAddress(toSendItem->text().split(" ").at(1));
-	udpSocketFS->abort();
-	udpSocketFS->connectToHost(toSendHost, 45455);
+	tcpSocketFS->abort();
+	tcpSocketFS->connectToHost(toSendHost, 45455);
 }
 
 // посылка файла
@@ -433,12 +438,21 @@ void qfobmen::sendFile()
 	// имя посылаемого файла
 	out << fileNameToSend;
 	// сам файл
-	out << file.readAll();
+	for (int i = 0; i < 10000; i++) {}
+	tcpSocketFS->write(block);
+	qint64 readed = 0;
+	while (readed < file.size()) {
+		QByteArray block1;
+		QDataStream out1(&block1, QIODevice::WriteOnly);
+		out1.setVersion(QDataStream::Qt_4_0);
+		out1 << file.read(1024*1024);
+		// теперь сформированный блок посылаем по TCP
+		tcpSocketFS->write(block1);
+		readed += 1024*1024;
+	}
 
-	// теперь сформированный блок посылаем по TCP
-	udpSocketFS->write(block);
 	// и корректно отключаемся
-	udpSocketFS->disconnectFromHost();
+//	tcpSocketFS->disconnectFromHost();
 }
 
 // включаем/выключаем кнопки действий в зависимости от выделенности программы онлайн в списке
@@ -466,7 +480,7 @@ void qfobmen::changeSoundIcon()
 // а так мы вырубаем закачку
 void qfobmen::cancelTransfer()
 {
-	udpSocketFR->abort();
+	//fileServer->close();
 }
 
 // открываем окно чата
@@ -646,15 +660,77 @@ FileThread::FileThread(int socketDescriptor, QObject *parent)
 
 void FileThread::run()
 {
-	QTcpSocket tcpSocket;
-	if (!tcpSocket.setSocketDescriptor(socketDescriptor)) {
+	QTcpSocket tcpSocketTmp;
+	if (!tcpSocketTmp.setSocketDescriptor(socketDescriptor)) {
 		return;
 	}
 
+	tcpSocket = &tcpSocketTmp;
+	blockSize = 0;
+	alreadyAsked = false;
+	connect(&tcpSocketTmp, SIGNAL(readyRead()), this, SLOT(readFile()));
+	exec();
+}
 
+void FileThread::readFile()
+{
+	if (!alreadyAsked) {
+		QMessageBox msgBox;
+		msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+		msgBox.setText(trUtf8("Кто-то хочет прислать вам файл!\nПринять его?"));
+		msgBox.setIcon(QMessageBox::Question);
+		msgBox.setWindowTitle(trUtf8("Новый файл!"));
+		switch (msgBox.exec()) {
+			case QMessageBox::No:
+				tcpSocket->disconnectFromHost();
+			// 	tcpSocket->waitForDisconnected();
 
-	tcpSocket.disconnectFromHost();
-	tcpSocket.waitForDisconnected();
+				quit();
+				return;
+		}
+
+		QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
+		saveDirectory = QFileDialog::getExistingDirectory(0, trUtf8("Куда файл сохранять?"), ".", options);
+		alreadyAsked = true;
+	}
+
+	QDataStream in(tcpSocket);
+	in.setVersion(QDataStream::Qt_4_0);
+
+	if (blockSize == 0) {
+		if (tcpSocket->bytesAvailable() < (int)sizeof(quint64))
+			return;
+
+		in >> blockSize;
+		emit fileSize(blockSize);
+	}
+	emit currBytes(tcpSocket->bytesAvailable());
+	if (tcpSocket->bytesAvailable() < blockSize)
+		return;
+
+	QString comment;
+	QString fileName;
+
+	// разделяем пришедшее на комментарий, имя файла и сам файл
+	in >> comment;
+	in >> fileName;
+
+	// обрабатываем пришедшее имя файла
+	QFileInfo fi(fileName);
+	fileName = fi.fileName();
+
+	QFile file(saveDirectory+fileName);
+	if (!file.open(QIODevice::WriteOnly))
+		return;
+	QByteArray tmp;
+	in >> tmp;
+	file.write(tmp);
+	file.close();
+
+	tcpSocket->disconnectFromHost();
+// 	tcpSocket->waitForDisconnected();
+
+	quit();
 }
 
 FileServer::FileServer(QObject *parent)
@@ -665,7 +741,9 @@ FileServer::FileServer(QObject *parent)
 
 void FileServer::incomingConnection(int socketDescriptor)
 {
-	FileThread *thread = new FileThread(socketDescriptor, this);
-	connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-	thread->start();
+ 	FileThread *thread = new FileThread(socketDescriptor, this);
+	connect(thread, SIGNAL(fileSize(int)), this, SIGNAL(fileSize(int)));
+	connect(thread, SIGNAL(currBytes(int)), this, SIGNAL(currBytes(int)));
+  	connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+  	thread->start();
 }

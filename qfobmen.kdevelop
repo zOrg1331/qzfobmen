@@ -11,7 +11,7 @@
     </keywords>
     <ignoreparts/>
     <projectname>qfobmen</projectname>
-    <projectdirectory>.</projectdirectory>
+    <projectdirectory>../qzfobmen</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
     <description/>
     <defaultencoding/>
@@ -143,14 +143,14 @@
   </kdevdebugger>
   <kdevtrollproject>
     <run>
-      <mainprogram>/home/zorg/j.weblancer/qfobmen</mainprogram>
+      <mainprogram>/home/zorg/j.weblancer/qzfobmen/bin/qfobmen</mainprogram>
       <programargs/>
       <directoryradio>executable</directoryradio>
       <globaldebugarguments/>
-      <globalcwd>/home/zorg/j.weblancer/qfobmen</globalcwd>
-      <useglobalprogram>false</useglobalprogram>
+      <globalcwd>/home/zorg/j.weblancer/qzfobmen</globalcwd>
+      <useglobalprogram>true</useglobalprogram>
       <terminal>false</terminal>
-      <autocompile>false</autocompile>
+      <autocompile>true</autocompile>
       <autoinstall>false</autoinstall>
       <autokdesu>false</autokdesu>
       <envvars/>
@@ -172,6 +172,8 @@
       <replacePaths>false</replacePaths>
       <disableDefaultOpts>true</disableDefaultOpts>
       <enableFilenamesOnly>false</enableFilenamesOnly>
+      <showVariablesInTree>true</showVariablesInTree>
+      <showParseErrors>true</showParseErrors>
     </qmake>
   </kdevtrollproject>
   <workspace>
