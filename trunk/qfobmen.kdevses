@@ -1,16 +1,13 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="3" >
-  <Doc0 NumberOfViews="1" URL="file:///home/zorg/j.weblancer/qfobmen/src/qfobmen.h" >
-   <View0 Encoding="" line="58" Type="Source" />
+ <DocsAndViews NumberOfDocuments="2" >
+  <Doc0 NumberOfViews="1" URL="file:///home/zorg/j.weblancer/qzfobmen/src/qfobmen.h" >
+   <View0 Encoding="" line="55" Type="Source" />
   </Doc0>
-  <Doc1 NumberOfViews="1" URL="file:///home/zorg/j.weblancer/qfobmen/src/qfobmen.cpp" >
-   <View0 Encoding="" line="671" Type="Source" />
+  <Doc1 NumberOfViews="1" URL="file:///home/zorg/j.weblancer/qzfobmen/src/qfobmen.cpp" >
+   <View0 Encoding="" line="716" Type="Source" />
   </Doc1>
-  <Doc2 NumberOfViews="1" URL="file:///usr/share/doc/qt-4.3.4/html/network-threadedfortuneserver-fortuneserver-cpp.html" >
-   <View0 Type="Documentation" />
-  </Doc2>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>

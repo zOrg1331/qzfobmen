@@ -41,8 +41,19 @@ class FileThread : public QThread
 
 		void run();
 
+	private slots:
+		void readFile();
+
+	signals:
+		void fileSize(int);
+		void currBytes(int);
+
 	private:
+		QTcpSocket *tcpSocket;
 		int socketDescriptor;
+		quint64 blockSize;
+		bool alreadyAsked;
+		QString saveDirectory;
 };
 
 class FileServer : public QTcpServer
@@ -54,6 +65,10 @@ class FileServer : public QTcpServer
 
 	protected:
 		void incomingConnection(int socketDescriptor);
+
+	signals:
+		void fileSize(int);
+		void currBytes(int);
 
 	private:
 
@@ -206,10 +221,11 @@ private:
 	QUdpSocket *udpSocketS;
 	// сокет для приема (суффикс R) датаграмм
 	QUdpSocket *udpSocketR;
+	FileServer fileServer;
 	// сокет для посылки (суффикс S) датаграмм
-	QUdpSocket *udpSocketFS;
+	QTcpSocket *tcpSocketFS;
 	// сокет для приема (суффикс R) датаграмм
-	QUdpSocket *udpSocketFR;
+//	QUdpSocket *udpSocketFR;
 	// сокет для посылки (суффикс S) датаграмм
 	QUdpSocket *udpSocketCS;
 	// сокет для приема (суффикс R) датаграмм
@@ -245,7 +261,7 @@ private slots:
 	// перерабатываем висящие на порту и ждущие своей очереди датаграммы
 	void processPendingDatagrams();
 	// перерабатываем висящие на порту и ждущие своей очереди датаграммы
-	void processPendingDatagramsF();
+// 	void processPendingDatagramsF();
 	// перерабатываем висящие на порту и ждущие своей очереди датаграммы
 	void processPendingDatagramsC();
 	// начинаем посылать широковещательные пакеты, так мы сообщаем о том, что мы в сети
