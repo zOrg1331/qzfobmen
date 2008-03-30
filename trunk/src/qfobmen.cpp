@@ -44,11 +44,15 @@ qfobmen::qfobmen()
 	cancelTransferButton->setIcon(QIcon(":/images/cancel.png"));
 	sendButton->setEnabled(false);
 	sendButton->setIcon(QIcon(":/images/send.png"));
+	sendButton->setIconSize(QSize(24, 24));
 	chatButton->setEnabled(false);
 	chatButton->setIcon(QIcon(":/images/chat.png"));
+	chatButton->setIconSize(QSize(24, 24));
 	searchButton->setIcon(QIcon(":/images/search.png"));
+	searchButton->setIconSize(QSize(24, 24));
 	soundOffButton->setCheckable(true);
 	soundOffButton->setIcon(QIcon(":/images/sound.png"));
+	soundOffButton->setIconSize(QSize(24, 24));
 	progressBar->reset();
 	commentDialog->hide();
 	// принимаем широковещательные пакеты от других программ в сети на порту 45454
