@@ -44,19 +44,25 @@ qfobmen::qfobmen()
 	cancelTransferButton->setEnabled(false);
 	cancelTransferButton->setIcon(QIcon(":/images/cancel.png"));
 	cancelTransferButton->setIconSize(QSize(24, 24));
+	cancelTransferButton->setToolTip(trUtf8("Отменить закачку файла."));
 	sendButton->setEnabled(false);
 	sendButton->setIcon(QIcon(":/images/send.png"));
 	sendButton->setIconSize(QSize(24, 24));
+	sendButton->setToolTip(trUtf8("Послать файл..."));
 	chatButton->setEnabled(false);
 	chatButton->setIcon(QIcon(":/images/chat.png"));
 	chatButton->setIconSize(QSize(24, 24));
+	chatButton->setToolTip(trUtf8("Начать чат..."));
 	searchButton->setIcon(QIcon(":/images/search.png"));
 	searchButton->setIconSize(QSize(24, 24));
+	searchButton->setToolTip(trUtf8("Принудительный поиск других программ."));
 	soundOffButton->setCheckable(true);
 	soundOffButton->setIcon(QIcon(":/images/sound.png"));
 	soundOffButton->setIconSize(QSize(24, 24));
+	soundOffButton->setToolTip(trUtf8("Отключить звук."));
 	aboutButton->setIcon(QIcon(":/images/about.png"));
 	aboutButton->setIconSize(QSize(24, 24));
+	aboutButton->setToolTip(trUtf8("О программе..."));
 	progressBar->reset();
 	commentDialog->hide();
 	// принимаем широковещательные пакеты от других программ в сети на порту 45454
