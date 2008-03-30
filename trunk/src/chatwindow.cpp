@@ -6,6 +6,7 @@ ChatWindow::ChatWindow(QWidget *parent) : QDialog(parent)
 	// необходимое
 	messages = new QTextEdit(this);
 	messEdit = new QLineEdit(this);
+	sendButton = new QPushButton(trUtf8("Отправить"), this);
 
 	// параметры
 	messages->setReadOnly(true);
@@ -13,12 +14,19 @@ ChatWindow::ChatWindow(QWidget *parent) : QDialog(parent)
 
 	// по нажатию на Enter в строке послыки сообщения - посылаем его
 	connect(messEdit, SIGNAL(returnPressed()), this, SLOT(sayMessage()));
+	connect(sendButton, SIGNAL(clicked()), this, SLOT(sayMessage()));
 
 	// Фен-Шуй
+	QHBoxLayout *sendLayout = new QHBoxLayout;
+	sendLayout->addWidget(messEdit);
+	sendLayout->addWidget(sendButton);
+	sendLayout->setSpacing(0);
+	sendLayout->setMargin(0);
+
 	QVBoxLayout *mainLayout = new QVBoxLayout;
 	mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 	mainLayout->addWidget(messages);
-	mainLayout->addWidget(messEdit);
+	mainLayout->addLayout(sendLayout);
 	mainLayout->setSpacing(1);
 	mainLayout->setMargin(2);
 	setLayout(mainLayout);

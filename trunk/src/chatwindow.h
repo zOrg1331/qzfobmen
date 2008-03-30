@@ -50,6 +50,7 @@ class ChatWindow : public QDialog
 		// строка ввода сообщения
 		// по нажатию Enter, сообщение посылается
 		QLineEdit *messEdit;
+		QPushButton *sendButton;
 
 		// слоты только для внутреннего использования
 	private slots:
