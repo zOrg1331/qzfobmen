@@ -509,19 +509,35 @@ void qfobmen::cancelTransfer()
 // открываем окно чата
 void qfobmen::openChat()
 {
-	// открываем окно
-	ChatWindow *chatWindow = new ChatWindow(this);
-	// задаем имя того, с кем общаемся
-	chatWindow->setTalker(appsList->currentItem()->text().split(" ").at(0));
-	// и наш ник
-	chatWindow->setAppName(appName);
-	// если в чат-виджете что то сказали, то принимаем от него эту информацию
-	// и посылаем её по соответсвующим координатам)
-	connect(chatWindow, SIGNAL(iSayMessage(QString)),
-			this, SLOT(prepareSendMessage(QString)));
-	// созданной окно добавляем в общий список
-	chatWindows->append(chatWindow);
-	chatWindow->show();
+	int j = -1;
+	QString currentNick;
+	if (appsList->column(appsList->currentItem()) == 0) {
+		currentNick = appsList->currentItem()->text();
+	} else {
+		currentNick = appsList->item(appsList->row(appsList->currentItem()), 0)->text();
+	}
+	for (int i = 0; i < chatWindows->size(); i++) {
+		if (chatWindows->at(i)->talker == currentNick) {
+			j = i;
+		}
+	}
+	if (j == -1) {
+		// открываем окно
+		ChatWindow *chatWindow = new ChatWindow(this);
+		// задаем имя того, с кем общаемся
+		chatWindow->setTalker(appsList->currentItem()->text().split(" ").at(0));
+		// и наш ник
+		chatWindow->setAppName(appName);
+		// если в чат-виджете что то сказали, то принимаем от него эту информацию
+		// и посылаем её по соответсвующим координатам)
+		connect(chatWindow, SIGNAL(iSayMessage(QString)),
+				this, SLOT(prepareSendMessage(QString)));
+		// созданной окно добавляем в общий список
+		chatWindows->append(chatWindow);
+		chatWindow->show();
+	} else {
+		chatWindows->at(j)->setFocus(Qt::MouseFocusReason);
+	}
 }
 
 void qfobmen::newChat(QString author, QString message)
