@@ -3,10 +3,10 @@
 <KDevPrjSession>
  <DocsAndViews NumberOfDocuments="2" >
   <Doc0 NumberOfViews="1" URL="file:///home/zorg/j.weblancer/qzfobmen/src/qfobmen.h" >
-   <View0 Encoding="" line="55" Type="Source" />
+   <View0 Encoding="" line="39" Type="Source" />
   </Doc0>
   <Doc1 NumberOfViews="1" URL="file:///home/zorg/j.weblancer/qzfobmen/src/qfobmen.cpp" >
-   <View0 Encoding="" line="716" Type="Source" />
+   <View0 Encoding="" line="695" Type="Source" />
   </Doc1>
  </DocsAndViews>
  <pluginList>
