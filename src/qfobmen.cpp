@@ -121,7 +121,7 @@ qfobmen::qfobmen()
 	// по нажатию правой кнопки мыши на список программ, вызываем наше контекстное меню
 	connect(appsList, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(popupCustomMenu(const QPoint &)));
 	// вручную обновляем список
-	connect(searchButton, SIGNAL(clicked()), this, SLOT(broadcastDatagram()));
+	connect(searchButton, SIGNAL(clicked()), this, SLOT(testList()));
 	// проверяем, выделен ли какой пункт меню, если не выделен, то кнопки действий будут заблокированы
 	connect(appsList, SIGNAL(itemSelectionChanged()), this, SLOT(enableButtons()));
 	// обрабатываем реакции на эти кнопки (названия говорящие)
