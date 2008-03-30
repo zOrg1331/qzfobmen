@@ -53,7 +53,7 @@ private:
 	QGridLayout *mainLayout;
 	// список других программ в сети ("живые" + "мертвые")
 	// не претендует на программное совершенство и будет переработан
-	QListWidget *appsList;
+	QTableWidget *appsList;
 	// таймер, по которому посылаются широковещательные пакеты
 	QTimer *timer;
 	// таймер, по которому перепроверяются программы в списке (в главном окне)
@@ -79,8 +79,8 @@ private:
 	QAction *chatAct;
 	// элемент списка (другая программа в сети), которому мы посылаем файл или сообщение
 	// из этого мы просто автоматически извлекаем имя того, кому посылаем и ip адрес
-	QListWidgetItem *toSendItem;
-	QListWidgetItem *toSendMessageItem;
+	QTableWidgetItem *toSendItem;
+	QTableWidgetItem *toSendMessageItem;
 	// индикатор загрузки файла
 	QProgressBar *progressBar;
 	// метки, поясняющие смысл отдельных виджетов
@@ -142,6 +142,7 @@ private slots:
 	// ослеживаем, перехватываем и реализуем по своему событие закрытия приложения
 protected:
 	void closeEvent(QCloseEvent *event);
+	void resizeEvent(QResizeEvent*);
 
 };
 

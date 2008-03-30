@@ -16,7 +16,7 @@ qfobmen::qfobmen()
 	// создаем элементы интерфейса, сокеты и сервера
 	appnameEdit = new QLineEdit(trUtf8("ник"));
 	nickLabel = new QLabel(trUtf8("Ваш ник"));
-	appsList = new QListWidget();
+	appsList = new QTableWidget();
 	appsListLabel = new QLabel(trUtf8("Другие программы в сети:"));
 	mainLayout = new QGridLayout();
 	quitButton = new QPushButton(trUtf8("Выход"));
@@ -39,6 +39,14 @@ qfobmen::qfobmen()
 	//udpSocketFR = new QUdpSocket(this);
 // 	udpSocketCS = new QUdpSocket(this);
 // 	udpSocketCR = new QUdpSocket(this);
+
+	appsList->setColumnCount(2);
+	appsList->setRowCount(0);
+	appsList->setAlternatingRowColors(true);
+	appsList->setContentsMargins(0, 0, 0, 0);
+	appsList->verticalHeader()->setVisible(false);
+	appsList->horizontalHeader()->setVisible(false);
+	appsList->setFont(QFont("Sans", 10));
 
 	// задаем начальные параметры элементам интерфейса, сокетам и серверам
 	cancelTransferButton->setEnabled(false);
@@ -146,6 +154,8 @@ qfobmen::qfobmen()
 	appnameEdit->setFocus();
 	// начинам вещать о себе в сети
 	startBroadcasting();
+
+	resize(180, 320);
 }
 
 // задаем себе имя
@@ -207,7 +217,16 @@ void qfobmen::processPendingDatagrams()
 					newUser->setTtl(4);
 					users.append(newUser);
 
-					appsList->addItem(QString(newUser->getUsername()+" "+newUser->getIP().toString()));
+					appsList->setRowCount(appsList->rowCount()+1);
+					QTableWidgetItem *newItem1 = new QTableWidgetItem(QString(newUser->getUsername()));
+					newItem1->setFlags(Qt::ItemIsSelectable);
+					newItem1->setForeground(Qt::darkRed);
+					appsList->setItem(appsList->rowCount()-1, 0, newItem1);
+					appsList->setRowHeight(appsList->rowCount()-1, 20);
+					QTableWidgetItem *newItem2 = new QTableWidgetItem(newUser->getIP().toString());
+					newItem2->setFlags(Qt::ItemIsSelectable);
+					newItem2->setForeground(Qt::black);
+					appsList->setItem(appsList->rowCount()-1, 1, newItem2);
 				} else {
 					users.at(i)->setTtl(users.at(i)->getTtl()+1);
 				}
@@ -347,9 +366,13 @@ void qfobmen::testList()
 	int i = 0;
 	while (i < users.size()) {
 		if (users.at(i)->getTtl() < 1) {
-			QListWidgetItem *item;
-			item = appsList->takeItem(appsList->row(appsList->findItems(users.at(i)->getUsername(), Qt::MatchContains).at(0)));
-			delete item;
+			QTableWidgetItem *item1;
+			QTableWidgetItem *item2;
+			int row = appsList->row(appsList->findItems(users.at(i)->getUsername(), Qt::MatchContains).at(0));
+			item1 = appsList->takeItem(row, 0);
+			item2 = appsList->takeItem(row, 1);
+			delete item1;
+			delete item2;
 			users.remove(i);
 		} else i++;
 	}
@@ -375,6 +398,7 @@ void qfobmen::popupCustomMenu(const QPoint &coord)
 	// общая для всего класса переменная принимает значение выделенного пункта,
 	// теперь можно уже отсюда брать информацию о другой программе в сети
 	toSendItem = appsList->itemAt(coord);
+	toSendItem = appsList->item(appsList->row(toSendItem), 0);
 	if (toSendItem != NULL) {
 		QMenu menu(this);
 		// составляем меню
@@ -390,6 +414,7 @@ void qfobmen::prepareSendFile()
 	// спрашиваем пользователя на предмет собсно файла и комментария к нему
 	if (appsList->currentRow() != -1) {
 		toSendItem = appsList->currentItem();
+		toSendItem = appsList->item(appsList->row(toSendItem), 0);
 		fileNameToSend = QFileDialog::getOpenFileName(this, trUtf8("Файл для отправки"),
 				"./", trUtf8("Любой файл (*.*)"));
 		commentDialog->show();
@@ -406,7 +431,7 @@ void qfobmen::connectToSend()
 
 	// выбираем к кому, и устанавливаем соединение
 	QHostAddress toSendHost;
-	toSendHost.setAddress(toSendItem->text().split(" ").at(1));
+	toSendHost.setAddress(appsList->item(appsList->row(toSendItem), 1)->text());
 	tcpSocketFS->abort();
 	tcpSocketFS->connectToHost(toSendHost, 45455);
 }
@@ -531,7 +556,7 @@ void qfobmen::prepareSendMessage(QString message)
 
 		// коннектимся..
 		QHostAddress toSendHost;
-		toSendHost.setAddress(toSendMessageItem->text().split(" ").at(1));
+		toSendHost.setAddress(appsList->item(appsList->row(toSendMessageItem), 1)->text());
 		tcpSocketCS->abort();
 		tcpSocketCS->connectToHost(toSendHost, 45456);
 	}
@@ -569,6 +594,11 @@ void qfobmen::aboutDlg() {
 	msgBox.setIcon(QMessageBox::Question);
 	msgBox.setWindowTitle(trUtf8("О программе.."));
 	msgBox.exec();
+}
+
+void qfobmen::resizeEvent(QResizeEvent * ) {
+	appsList->setColumnWidth(0, 70);
+	appsList->setColumnWidth(1, appsList->width()-74);
 }
 
 // деструктор пуст
