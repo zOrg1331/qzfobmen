@@ -1,13 +1,16 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
- <DocsAndViews NumberOfDocuments="2" >
+ <DocsAndViews NumberOfDocuments="3" >
   <Doc0 NumberOfViews="1" URL="file:///home/zorg/j.weblancer/qzfobmen/src/qfobmen.h" >
-   <View0 Encoding="" line="39" Type="Source" />
+   <View0 Encoding="" line="139" Type="Source" />
   </Doc0>
   <Doc1 NumberOfViews="1" URL="file:///home/zorg/j.weblancer/qzfobmen/src/qfobmen.cpp" >
-   <View0 Encoding="" line="695" Type="Source" />
+   <View0 Encoding="" line="66" Type="Source" />
   </Doc1>
+  <Doc2 NumberOfViews="1" URL="file:///home/zorg/j.weblancer/qzfobmen/src/fileserver.cpp" >
+   <View0 Encoding="" line="2" Type="Source" />
+  </Doc2>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>
