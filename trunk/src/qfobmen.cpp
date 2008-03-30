@@ -9,35 +9,6 @@
 #include <QtGui>
 #include "qfobmen.h"
 
-User::User()
-{
-
-}
-
-void User::setUsername(QString Username) {
-	username = Username;
-}
-
-void User::setIP(QHostAddress IP) {
-	ip = IP;
-}
-
-void User::setTtl(int TTL) {
-	ttl = TTL;
-	if (ttl > 5) ttl = 5;
-}
-
-int User::getTtl() {
-	return ttl;
-}
-
-QString User::getUsername() {
-	return username;
-}
-
-QHostAddress User::getIP() {
-	return ip;
-}
 
 // реализация конструктора
 qfobmen::qfobmen()
@@ -58,13 +29,15 @@ qfobmen::qfobmen()
 	chatButton = new QToolButton(this);
 	cancelTransferButton = new QToolButton(this);
 	commentDialog = new CommentDialog(this);
+	chatWindows = new QVector <ChatWindow*>;
 	udpSocketS = new QUdpSocket(this);
 	udpSocketR = new QUdpSocket(this);
 	tcpSocketFS = new QTcpSocket(this);
+	tcpSocketCS = new QTcpSocket(this);
 	//udpSocketFS = new QUdpSocket(this);
 	//udpSocketFR = new QUdpSocket(this);
-	udpSocketCS = new QUdpSocket(this);
-	udpSocketCR = new QUdpSocket(this);
+// 	udpSocketCS = new QUdpSocket(this);
+// 	udpSocketCR = new QUdpSocket(this);
 
 	// задаем начальные параметры элементам интерфейса, сокетам и серверам
 	cancelTransferButton->setEnabled(false);
@@ -81,8 +54,10 @@ qfobmen::qfobmen()
 	// принимаем широковещательные пакеты от других программ в сети на порту 45454
 	udpSocketR->bind(45454, QUdpSocket::ShareAddress);
 	fileServer.listen(QHostAddress::Any, 45455);
+	chatServer.listen(QHostAddress::Any, 45456);
+	chatServer.setChatWindows(chatWindows);
 	//udpSocketFR->bind(45455, QUdpSocket::ShareAddress);
-	udpSocketCR->bind(45456, QUdpSocket::ShareAddress);
+// 	udpSocketCR->bind(45456, QUdpSocket::ShareAddress);
 	// задаем наш ник (первоначальный)
 	// вобщем, инициализируем переменные
 	appName = appnameEdit->text();
@@ -92,6 +67,9 @@ qfobmen::qfobmen()
 
 	connect(&fileServer, SIGNAL(fileSize(int)), progressBar, SLOT(setMaximum(int)));
 	connect(&fileServer, SIGNAL(currBytes(int)), progressBar, SLOT(setValue(int)));
+
+	connect(&chatServer, SIGNAL(newChat(QString, QString)),
+		   this, SLOT(newChat(QString, QString)));
 
 	// инициализируем действиями контекстное меню
 	sendAct = new QAction(trUtf8("Послать файл..."), this);
@@ -107,9 +85,9 @@ qfobmen::qfobmen()
 	// пришел пакет на UDP socket, запускаем его обработку
 	connect(udpSocketR, SIGNAL(readyRead()), this, SLOT(processPendingDatagrams()));
 	//connect(udpSocketFR, SIGNAL(readyRead()), this, SLOT(processPendingDatagramsF()));
-	connect(udpSocketCR, SIGNAL(readyRead()), this, SLOT(processPendingDatagramsC()));
+	//connect(udpSocketCR, SIGNAL(readyRead()), this, SLOT(processPendingDatagramsC()));
 	connect(tcpSocketFS, SIGNAL(connected()), this, SLOT(sendFile()));
-	connect(udpSocketCS, SIGNAL(connected()), this, SLOT(sendMessage()));
+	connect(tcpSocketCS, SIGNAL(connected()), this, SLOT(sendMessage()));
 	// на каждый тик таймера отправляем новые пакеты
 	connect(timer, SIGNAL(timeout()), this, SLOT(broadcastDatagram()));
 	// на каждый тик этого таймера, перепроверяем состоятельность списка программ онлайн
@@ -287,64 +265,64 @@ void qfobmen::processPendingDatagrams()
 //  	}
 // }
 
-void qfobmen::processPendingDatagramsC()
-{
-	// пока очередь не опустела, обрабатываем датаграммы
-	while (udpSocketCR->hasPendingDatagrams()) {
-		if (!soundOffButton->isChecked()) {
-			QSound::play("sounds/newmessage.wav");
-		}
-
-		QByteArray datagram;
-		datagram.resize(udpSocketCR->pendingDatagramSize());
-		QHostAddress sender;
-		quint16 senderPort;
-
-		udpSocketCR->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
-
-		QDataStream in(datagram);
-		in.setVersion(QDataStream::Qt_4_0);
-
-		QString author;
-		QString message;
-		quint32 msgSize;
-
-		in >> msgSize;
-		in >> author;
-		in >> message;
-
-		int j = -1;
-		for (int i = 0; i < chatWindows.size(); i++) {
-			if (chatWindows.at(i)->talker == author) {
-				j = i;
-			}
-		}
-		if (j == -1) {
-			QMessageBox::StandardButton reply;
-			reply = QMessageBox::question(this, trUtf8("Новое сообщение!"),
-										  trUtf8("Хотите начать разговор с %1?").arg(author),
-												  QMessageBox::Yes | QMessageBox::No);
-			if (reply == QMessageBox::No) {
-				return;
-			} else {
-				// если таки начинаем разговор, то создаем, как выше, окно чата
-				ChatWindow *chatWindow = new ChatWindow(this);
-				chatWindow->setTalker(author);
-				chatWindow->setAppName(appName);
-				chatWindow->show();
-				chatWindow->newMessage(message);
-
-				connect(chatWindow, SIGNAL(iSayMessage(QString)),
-						this, SLOT(prepareSendMessage(QString)));
-				chatWindows.append(chatWindow);
-				return;
-			}
-		} else {
-			// если окно с чатом уже существует, то туда смску и шлем
-			chatWindows.at(j)->newMessage(message);
-		}
-	}
-}
+// void qfobmen::processPendingDatagramsC()
+// {
+// 	// пока очередь не опустела, обрабатываем датаграммы
+// 	while (udpSocketCR->hasPendingDatagrams()) {
+// 		if (!soundOffButton->isChecked()) {
+// 			QSound::play("sounds/newmessage.wav");
+// 		}
+//
+// 		QByteArray datagram;
+// 		datagram.resize(udpSocketCR->pendingDatagramSize());
+// 		QHostAddress sender;
+// 		quint16 senderPort;
+//
+// 		udpSocketCR->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
+//
+// 		QDataStream in(datagram);
+// 		in.setVersion(QDataStream::Qt_4_0);
+//
+// 		QString author;
+// 		QString message;
+// 		quint32 msgSize;
+//
+// 		in >> msgSize;
+// 		in >> author;
+// 		in >> message;
+//
+// 		int j = -1;
+// 		for (int i = 0; i < chatWindows.size(); i++) {
+// 			if (chatWindows.at(i)->talker == author) {
+// 				j = i;
+// 			}
+// 		}
+// 		if (j == -1) {
+// 			QMessageBox::StandardButton reply;
+// 			reply = QMessageBox::question(this, trUtf8("Новое сообщение!"),
+// 										  trUtf8("Хотите начать разговор с %1?").arg(author),
+// 												  QMessageBox::Yes | QMessageBox::No);
+// 			if (reply == QMessageBox::No) {
+// 				return;
+// 			} else {
+// 				// если таки начинаем разговор, то создаем, как выше, окно чата
+// 				ChatWindow *chatWindow = new ChatWindow(this);
+// 				chatWindow->setTalker(author);
+// 				chatWindow->setAppName(appName);
+// 				chatWindow->show();
+// 				chatWindow->newMessage(message);
+//
+// 				connect(chatWindow, SIGNAL(iSayMessage(QString)),
+// 						this, SLOT(prepareSendMessage(QString)));
+// 				chatWindows.append(chatWindow);
+// 				return;
+// 			}
+// 		} else {
+// 			// если окно с чатом уже существует, то туда смску и шлем
+// 			chatWindows.at(j)->newMessage(message);
+// 		}
+// 	}
+// }
 
 // проверяем на наличие мертвых душ
 // плохой алгоритм, надо переделать
@@ -361,15 +339,15 @@ void qfobmen::testList()
 	}
 
 	// всем открытым окнам чата объясняем с кем они на самом деле разговаривают
-	for (int i = 0; i < chatWindows.size(); i++) {
-		if (appsList->findItems(chatWindows.at(i)->talker, Qt::MatchContains).size()
+	for (int i = 0; i < chatWindows->size(); i++) {
+		if (appsList->findItems(chatWindows->at(i)->talker, Qt::MatchContains).size()
 		   == 0) {
 			// если собеседник оффлайн, сообщаем об этом
-			chatWindows.at(i)->setDead(true);
+			chatWindows->at(i)->setDead(true);
 		} else {
 			// если же он онлайн, а чат заблокирован, то разблокируем его обратно
-			if (chatWindows.at(i)->isDead()) {
-				chatWindows.at(i)->setDead(false);
+			if (chatWindows->at(i)->isDead()) {
+				chatWindows->at(i)->setDead(false);
 			}
 		}
 	}
@@ -437,22 +415,26 @@ void qfobmen::sendFile()
 	out << commentToSend;
 	// имя посылаемого файла
 	out << fileNameToSend;
-	// сам файл
-	for (int i = 0; i < 10000; i++) {}
+
+	out << file.readAll();
+
 	tcpSocketFS->write(block);
-	qint64 readed = 0;
-	while (readed < file.size()) {
-		QByteArray block1;
-		QDataStream out1(&block1, QIODevice::WriteOnly);
-		out1.setVersion(QDataStream::Qt_4_0);
-		out1 << file.read(1024*1024);
-		// теперь сформированный блок посылаем по TCP
-		tcpSocketFS->write(block1);
-		readed += 1024*1024;
-	}
+	// сам файл
+// 	for (int i = 0; i < 10000; i++) {}
+// 	tcpSocketFS->write(block);
+// 	qint64 readed = 0;
+// 	while (readed < file.size()) {
+// 		QByteArray block1;
+// 		QDataStream out1(&block1, QIODevice::WriteOnly);
+// 		out1.setVersion(QDataStream::Qt_4_0);
+// 		out1 << file.read(1024*1024);
+// 		// теперь сформированный блок посылаем по TCP
+// 		tcpSocketFS->write(block1);
+// 		readed += 1024*1024;
+// 	}
 
 	// и корректно отключаемся
-//	tcpSocketFS->disconnectFromHost();
+	tcpSocketFS->disconnectFromHost();
 }
 
 // включаем/выключаем кнопки действий в зависимости от выделенности программы онлайн в списке
@@ -497,9 +479,28 @@ void qfobmen::openChat()
 	connect(chatWindow, SIGNAL(iSayMessage(QString)),
 			this, SLOT(prepareSendMessage(QString)));
 	// созданной окно добавляем в общий список
-	chatWindows.append(chatWindow);
+	chatWindows->append(chatWindow);
 	chatWindow->show();
 }
+
+void qfobmen::newChat(QString author, QString message)
+{
+	// открываем окно
+	ChatWindow *chatWindow = new ChatWindow(this);
+	// задаем имя того, с кем общаемся
+	chatWindow->setTalker(author);
+	// и наш ник
+	chatWindow->setAppName(appName);
+	chatWindow->newMessage(message);
+	// если в чат-виджете что то сказали, то принимаем от него эту информацию
+	// и посылаем её по соответсвующим координатам)
+	connect(chatWindow, SIGNAL(iSayMessage(QString)),
+			this, SLOT(prepareSendMessage(QString)));
+	// созданной окно добавляем в общий список
+	chatWindows->append(chatWindow);
+	chatWindow->show();
+}
+
 
 // готовимся к отправки смски
 void qfobmen::prepareSendMessage(QString message)
@@ -515,8 +516,8 @@ void qfobmen::prepareSendMessage(QString message)
 		// коннектимся..
 		QHostAddress toSendHost;
 		toSendHost.setAddress(toSendMessageItem->text().split(" ").at(1));
-		udpSocketCS->abort();
-		udpSocketCS->connectToHost(toSendHost, 45456);
+		tcpSocketCS->abort();
+		tcpSocketCS->connectToHost(toSendHost, 45456);
 	}
 }
 
@@ -532,15 +533,15 @@ void qfobmen::sendMessage()
 	out << appName;
 	out << messageToSend;
 
-	udpSocketCS->write(block);
-	udpSocketCS->disconnectFromHost();
+	tcpSocketCS->write(block);
+	tcpSocketCS->disconnectFromHost();
 }
 
 // закрываем окна чата, если выходим из программы
 void qfobmen::closeEvent(QCloseEvent *event)
 {
-	for (int i = 0; i < chatWindows.size(); i++) {
-		chatWindows[i]->deleteLater();
+	for (int i = 0; i < chatWindows->size(); i++) {
+		chatWindows->at(i)->deleteLater();
 	}
 	event->accept();
 }
@@ -549,201 +550,4 @@ void qfobmen::closeEvent(QCloseEvent *event)
 qfobmen::~qfobmen()
 {
 
-}
-
-// конструктор диалога задания комментария
-CommentDialog::CommentDialog(QWidget *parent) : QDialog(parent)
-{
-	// создаем необходимое
-	label = new QLabel(trUtf8("Введите комментарий к файлу:"));
-	textEdit = new QTextEdit;
-	parentW = parent;
-
-	saveButton = new QPushButton(trUtf8("Применить"));
-	saveButton->setDefault(true);
-
-	// и тут Фен-Шуй
-	QGridLayout *mainLayout = new QGridLayout;
-	mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-	mainLayout->addWidget(label, 0, 0, 1, 2);
-	mainLayout->addWidget(textEdit, 1, 0, 4, 2);
-	mainLayout->addWidget(saveButton, 5, 0, 1, 2);
-	setLayout(mainLayout);
-
-	setWindowTitle(trUtf8("Задание комментария к файлу"));
-	// при сохранении каммента будет вызываться функция setComment..
-	connect(saveButton, SIGNAL(clicked()), this, SLOT(setComment()));
-}
-
-// .. а в ней мы просто всем сообщаем, что задан комментарий
-void CommentDialog::setComment()
-{
-	emit newComment();
-}
-
-// конструктор окна общения
-ChatWindow::ChatWindow(QWidget *parent) : QDialog(parent)
-{
-	// необходимое
-	messages = new QTextEdit();
-	messEdit = new QLineEdit();
-
-	// параметры
-	messages->setReadOnly(true);
-	dead = false;
-
-	// по нажатию на Enter в строке послыки сообщения - посылаем его
-	connect(messEdit, SIGNAL(returnPressed()), this, SLOT(sayMessage()));
-
-	// Фен-Шуй
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-	mainLayout->addWidget(messages);
-	mainLayout->addWidget(messEdit);
-	mainLayout->setSpacing(1);
-	mainLayout->setMargin(2);
-	setLayout(mainLayout);
-
-	// фокус передаем строке ввод текста
-	messEdit->setFocus();
-}
-
-// задаем имя собеседника
-void ChatWindow::setTalker(QString Talker)
-{
-	talker = Talker;
-	setWindowTitle(trUtf8("Разговор с %1.").arg(talker));
-}
-
-// наше имя
-void ChatWindow::setAppName(QString AppName)
-{
-	appName = AppName;
-}
-
-// в чат добавляет новое сообщение
-void ChatWindow::newMessage(QString Message)
-{
-	messages->append(QString("<b><font color=red>%1</font></b>: ").arg(talker)+Message);
-}
-
-// кричим о сообщении собеседнику в нужном формать..
-void ChatWindow::sayMessage()
-{
-	messages->append(QString("<b><font color=blue>%1</font></b>: ").arg(appName)
-			+messEdit->text());
-	emit iSayMessage(talker+";"+messEdit->text());
-	messEdit->setText("");
-}
-
-// собеседник - временно в оффлайн
-void ChatWindow::setDead(bool Dead)
-{
-	dead = Dead;
-	if (dead) {
-		messEdit->setEnabled(false);
-	} else {
-		messEdit->setEnabled(true);
-	}
-}
-
-// рассказываем остальным, мертв он или нет
-bool ChatWindow::isDead()
-{
-	return dead;
-}
-
-FileThread::FileThread(int socketDescriptor, QObject *parent)
-	: QThread(parent), socketDescriptor(socketDescriptor)
-{
-}
-
-void FileThread::run()
-{
-	QTcpSocket tcpSocketTmp;
-	if (!tcpSocketTmp.setSocketDescriptor(socketDescriptor)) {
-		return;
-	}
-
-	tcpSocket = &tcpSocketTmp;
-	blockSize = 0;
-	alreadyAsked = false;
-	connect(&tcpSocketTmp, SIGNAL(readyRead()), this, SLOT(readFile()));
-	exec();
-}
-
-void FileThread::readFile()
-{
-	if (!alreadyAsked) {
-		QMessageBox msgBox;
-		msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-		msgBox.setText(trUtf8("Кто-то хочет прислать вам файл!\nПринять его?"));
-		msgBox.setIcon(QMessageBox::Question);
-		msgBox.setWindowTitle(trUtf8("Новый файл!"));
-		switch (msgBox.exec()) {
-			case QMessageBox::No:
-				tcpSocket->disconnectFromHost();
-			// 	tcpSocket->waitForDisconnected();
-
-				quit();
-				return;
-		}
-
-		QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
-		saveDirectory = QFileDialog::getExistingDirectory(0, trUtf8("Куда файл сохранять?"), ".", options);
-		alreadyAsked = true;
-	}
-
-	QDataStream in(tcpSocket);
-	in.setVersion(QDataStream::Qt_4_0);
-
-	if (blockSize == 0) {
-		if (tcpSocket->bytesAvailable() < (int)sizeof(quint64))
-			return;
-
-		in >> blockSize;
-		emit fileSize(blockSize);
-	}
-	emit currBytes(tcpSocket->bytesAvailable());
-	if (tcpSocket->bytesAvailable() < blockSize)
-		return;
-
-	QString comment;
-	QString fileName;
-
-	// разделяем пришедшее на комментарий, имя файла и сам файл
-	in >> comment;
-	in >> fileName;
-
-	// обрабатываем пришедшее имя файла
-	QFileInfo fi(fileName);
-	fileName = fi.fileName();
-
-	QFile file(saveDirectory+fileName);
-	if (!file.open(QIODevice::WriteOnly))
-		return;
-	QByteArray tmp;
-	in >> tmp;
-	file.write(tmp);
-	file.close();
-
-	tcpSocket->disconnectFromHost();
-// 	tcpSocket->waitForDisconnected();
-
-	quit();
-}
-
-FileServer::FileServer(QObject *parent)
-	: QTcpServer(parent)
-{
-
-}
-
-void FileServer::incomingConnection(int socketDescriptor)
-{
- 	FileThread *thread = new FileThread(socketDescriptor, this);
-	connect(thread, SIGNAL(fileSize(int)), this, SIGNAL(fileSize(int)));
-	connect(thread, SIGNAL(currBytes(int)), this, SIGNAL(currBytes(int)));
-  	connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-  	thread->start();
 }
