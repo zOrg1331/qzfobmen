@@ -6,5 +6,6 @@
 	<file>images/send.png</file>
 	<file>images/sound.png</file>
 	<file>images/sound_dis.png</file>
+	<file>images/about.png</file>
 </qresource>
 </RCC>

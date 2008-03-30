@@ -91,6 +91,7 @@ private:
 	QToolButton *sendButton;
 	QToolButton *soundOffButton;
 	QToolButton *chatButton;
+	QToolButton *aboutButton;
 	QToolButton *cancelTransferButton;
 	// наш ник
 	QString appName;
@@ -136,6 +137,7 @@ private slots:
 	// открываем окно чата
 	void openChat();
 	void newChat(QString, QString);
+	void aboutDlg();
 
 	// ослеживаем, перехватываем и реализуем по своему событие закрытия приложения
 protected:

@@ -27,6 +27,7 @@ qfobmen::qfobmen()
 	sendButton = new QToolButton(this);
 	soundOffButton = new QToolButton(this);
 	chatButton = new QToolButton(this);
+	aboutButton = new QToolButton(this);
 	cancelTransferButton = new QToolButton(this);
 	commentDialog = new CommentDialog(this);
 	chatWindows = new QVector <ChatWindow*>;
@@ -42,6 +43,7 @@ qfobmen::qfobmen()
 	// задаем начальные параметры элементам интерфейса, сокетам и серверам
 	cancelTransferButton->setEnabled(false);
 	cancelTransferButton->setIcon(QIcon(":/images/cancel.png"));
+	cancelTransferButton->setIconSize(QSize(24, 24));
 	sendButton->setEnabled(false);
 	sendButton->setIcon(QIcon(":/images/send.png"));
 	sendButton->setIconSize(QSize(24, 24));
@@ -53,6 +55,8 @@ qfobmen::qfobmen()
 	soundOffButton->setCheckable(true);
 	soundOffButton->setIcon(QIcon(":/images/sound.png"));
 	soundOffButton->setIconSize(QSize(24, 24));
+	aboutButton->setIcon(QIcon(":/images/about.png"));
+	aboutButton->setIconSize(QSize(24, 24));
 	progressBar->reset();
 	commentDialog->hide();
 	// принимаем широковещательные пакеты от других программ в сети на порту 45454
@@ -111,6 +115,7 @@ qfobmen::qfobmen()
 	connect(soundOffButton, SIGNAL(clicked()), this, SLOT(changeSoundIcon()));
 	connect(cancelTransferButton, SIGNAL(clicked()), this, SLOT(cancelTransfer()));
 	connect(chatButton, SIGNAL(clicked()), this, SLOT(openChat()));
+	connect(aboutButton, SIGNAL(clicked()), this, SLOT(aboutDlg()));
 
 	// располагаем виджеты согласно Фен-Шуй, укладывая их в нужные позиции "выравнивателя"
 	mainLayout->addWidget(nickLabel, 0, 0, 1, 2);
@@ -123,8 +128,9 @@ qfobmen::qfobmen()
 	mainLayout->addWidget(soundOffButton, 8, 3, 1, 1);
 	mainLayout->addWidget(progressBar, 9, 0, 1, 3);
 	mainLayout->addWidget(cancelTransferButton, 9, 3, 1, 1);
-	mainLayout->addWidget(quitButton, 10, 0, 1, 4);
-	mainLayout->setMargin(2);
+	mainLayout->addWidget(quitButton, 10, 0, 1, 3);
+	mainLayout->addWidget(aboutButton, 10, 3, 1, 1);
+	mainLayout->setMargin(1);
 	mainLayout->setSpacing(1);
 	setLayout(mainLayout);
 
@@ -548,6 +554,15 @@ void qfobmen::closeEvent(QCloseEvent *event)
 		chatWindows->at(i)->deleteLater();
 	}
 	event->accept();
+}
+
+void qfobmen::aboutDlg() {
+	QMessageBox msgBox;
+	msgBox.setStandardButtons(QMessageBox::Ok);
+	msgBox.setText(trUtf8("Программа предназначена для децентраллизованного (безсерверного) общения и обмена файлами в пределах локальной сети.\n\nАвторами являются:\nДмитрий Потапов и Сергей Марьян"));
+	msgBox.setIcon(QMessageBox::Question);
+	msgBox.setWindowTitle(trUtf8("О программе.."));
+	msgBox.exec();
 }
 
 // деструктор пуст
